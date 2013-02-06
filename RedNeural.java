@@ -15,9 +15,7 @@ public class RedNeural
     double bias = 0.1;          
     int numIterations = 30;
     Vector<Double> errors = new Vector<Double>();// new double[numIterations]; 
-	int numberOfWeights = example[0].length;
-	double[] weights = new double[numberOfWeights];
-	double[] deltaW = new double[numberOfWeights];
+
 	double k = 0; // Number of iterations
 	double error = 0;
 	double output = 0;
@@ -174,7 +172,9 @@ public class RedNeural
       // Batch Mode
       void DLRB(boolean[][] example, double n)
       {       
-
+		int numberOfWeights = example[0].length;
+		double[] weights = new double[numberOfWeights];
+		double[] deltaW = new double[numberOfWeights];
         for (int j = 0; j < numberOfWeights; j++)
         {
           weights[j] = 0;
@@ -225,7 +225,10 @@ public class RedNeural
 
       // ADALINE
       void ADALINE(boolean[][] example, double n){
-        for (int j = 0; j < numberOfWeights; j++)
+        int numberOfWeights = example[0].length;
+		double[] weights = new double[numberOfWeights];
+		double[] deltaW = new double[numberOfWeights];
+		for (int j = 0; j < numberOfWeights; j++)
         {
           weights[j] = 0;
           deltaW[j] = 0;
