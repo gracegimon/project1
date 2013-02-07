@@ -19,7 +19,7 @@ public class RedNeural
 		static double[] normMatrix;
         static double minNorm[];
         static double maxNorm[];
-    Vector<Double> errors = new Vector<Double>();
+    	Vector<Double> errors = new Vector<Double>();
 
 		int maxIterations = 2000;
 		double k = 0; // Number of iterations
@@ -171,8 +171,8 @@ public class RedNeural
 				}
 				deltaW[numberOfWeights-1] = rate * (target - output);
 				weights[numberOfWeights-1] += deltaW[numberOfWeights-1];
-				if ( ((double) Math.round(target) - output) == 0 )
-				System.out.println("Example " + i + " target /  output " + (double) Math.round(target) +" " +output);  				      
+				//if ( ((double) Math.round(target) - output) == 0 )
+			//	System.out.println("Example " + i + " target /  output " + (double) Math.round(target) +" " +output);  				      
 			}
 
 			error /= trainData.length;			
@@ -399,6 +399,16 @@ public class RedNeural
 		int option;
 		RedNeural rn = new RedNeural();
 
+		Vector<Double> rates = new Vector<Double>();
+		rates.add(0.01);
+		rates.add(0.1);
+
+		double[][] errorCharts;
+      
+		errorCharts = new double[rates.size()][rn.maxIterations];
+
+		System.out.println("Rates size: " + rates.size() + "\n");
+
 		if (args.length > 0) 
 		{			
 			if (args.length >= 4) 
@@ -406,20 +416,34 @@ public class RedNeural
 				option = Integer.parseInt(args[0]);
 				readTrainingData(args[2]);
 
-				if (option == 1){ // Perceptron
-					normalizeTrainingData();
-					rn.PLR(Double.parseDouble(args[1]));
-				}
-				else if (option == 2) // Delta Rule Batch Mode
-					rn.DLRB(Double.parseDouble(args[1]));			
+				for (int i = 0 ; i < rates.size(); i++)
+				{
+					rn.k = 0;
 
-				else if (option == 3) // Delta Rule Incremental Mode
-					rn.DLRI(Double.parseDouble(args[1]));
+					if (option == 1){ // Perceptron
+						normalizeTrainingData();
+						rn.PLR(rates.get(i));
+					}
+					else if (option == 2) // Delta Rule Batch Mode
+						rn.DLRB(rates.get(i));			
 
-				else if (option == 4) // ADALINE
-				{	
-					//normalizeTrainingData();		
-					rn.ADALINE(trainData, Double.parseDouble(args[1]));
+					else if (option == 3) // Delta Rule Incremental Mode
+						rn.DLRI(rates.get(i));
+
+					else if (option == 4) // ADALINE
+					{	
+						//normalizeTrainingData();		
+						rn.ADALINE(trainData, rates.get(i));
+					}
+
+			     	for (int j = 0; j < rn.errors.size() ; j++)
+			     	{
+			       		errorCharts[i][j] = rn.errors.get(j);
+			       	}
+
+			       	rn.errors = new Vector<Double>(); //.clear();
+
+
 				}
 			} 
 			else {
@@ -428,16 +452,22 @@ public class RedNeural
 			}
 
 
+
+			for (int i = 0; i < errorCharts.length ; i++)
+			{
+				System.out.println("\n=======\n");
+				for (int j = 0; j < rn.maxIterations ; j++)
+				{
+					System.out.println("Chart[" + i + "][" + j+ "] = " + errorCharts[i][j]);
+				}
+			}
+
 			// Prints the chart for the Error
 			System.out.println("Printing Chart of the Error");
      	XYChart xychart = new XYChart();
+
       
-     	double[] elCosoEste = new double[rn.errors.size()];
-      
-     	for (int i = 0; i < rn.errors.size() ; i++)
-       	elCosoEste[i] = rn.errors.get(i);
-      
-     	xychart.getChart(elCosoEste);
+     	xychart.getChart(errorCharts);
       
 		} else {
 			System.out.println("Please indicate the algorithm to evaluate");

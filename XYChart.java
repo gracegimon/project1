@@ -16,32 +16,47 @@ import java.io.*;
  * @Author Gimbet
  */
 public class XYChart {
-    public static void getChart(double[] errors){
+    public static void getChart(double[][] errors){
         makeChart(errors);
     }
-    public static void makeChart(double[] errors){
-    XYSeries series = new XYSeries("Error vs Iteraciones");
-    for (int i= 0 ; i<errors.length; i++){
-        series.add(i,errors[i]);
-    }
-    //Add the series to your data set
-    XYSeriesCollection dataset = new XYSeriesCollection();
-    dataset.addSeries(series);
-    //Generate the graph
-    JFreeChart chart = ChartFactory.createXYAreaChart("Error vs Iteraciones", // Title
-    "Iteraciones", // x-axis Label
-    "Error", // y-axis Label
-    dataset, // Dataset
-    PlotOrientation.VERTICAL, // Plot Orientation
-    true, // Show Legend
-    true, // Use tooltips
-    false // Configure chart to generate URLs?
-    );
-    try {
-    ChartUtilities.saveChartAsJPEG(new File("XYchart.jpg"), chart, 600, 400);
-    } catch (IOException e) {
-    System.err.println("Error creando grafico.");
-    }
+
+    public static void makeChart(double[][] errors)
+    {
+        XYSeries[] series = new XYSeries[errors.length];
+
+        for (int i = 0; i < errors.length; i++)
+        {
+            XYSeries serie = new XYSeries("" + i);
+            for (int j = 0 ; j<errors[i].length; j++){
+                serie.add(j, errors[i][j]);
+            }
+            series[i] = serie;
+        }
+
+        //Add the serie to your data set
+        XYSeriesCollection dataset = new XYSeriesCollection();
+
+        for (int i = 0; i < series.length; i++)
+            dataset.addSeries(series[i]);
+
+
+        //Generate the graph
+        JFreeChart chart = ChartFactory.createXYLineChart("Error vs Iteraciones", // Title
+            "Iteraciones", // x-axis Label
+            "Error", // y-axis Label
+            dataset, // Dataset
+            PlotOrientation.VERTICAL, // Plot Orientation
+            true, // Show Legend
+            true, // Use tooltips
+            false // Configure chart to generate URLs?
+        );
+
+
+        try {
+            ChartUtilities.saveChartAsJPEG(new File("XYchart.jpg"), chart, 1920, 1080);
+        } catch (IOException e) {
+            System.err.println("Error creando grafico.");
+        }
     }
     
 }
