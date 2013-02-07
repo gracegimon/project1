@@ -143,7 +143,7 @@ public class RedNeural
 
 
 	// Perceptron
-	void PLR(double n)
+	void PLR(double rate)
 	{
 		int numberOfWeights = weights.length;
 		double k = 0; // Number of iterations
@@ -166,10 +166,10 @@ public class RedNeural
 
 				for (int j = 0; j < numberOfWeights-1; j++) 
 				{
-					deltaW[j] = n * ( target - output) * trainData[i][j];
+					deltaW[j] = rate * ( target - output) * trainData[i][j];
 					weights[j] += deltaW[j];
 				}
-				deltaW[numberOfWeights-1] = n * (target - output);
+				deltaW[numberOfWeights-1] = rate * (target - output);
 				weights[numberOfWeights-1] += deltaW[numberOfWeights-1];  				      
 			}
 
@@ -181,55 +181,53 @@ public class RedNeural
 	}
 
 
-      // Delta Learning Rule
-      // Batch Mode
-      void DLRB(boolean[][] example, double n)
-      {       
-		int numberOfWeights = example[0].length;
-		double[] weights = new double[numberOfWeights];
-		double[] deltaW = new double[numberOfWeights];
-        for (int j = 0; j < numberOfWeights; j++)
-        {
-          weights[j] = 0;
-          deltaW[j] = 0;
-        }
+	// Delta Learning Rule
+	// Batch Mode
+	void DLRB(double rate)
+	{       
+		int numberOfWeights = weights.length;
+		double error;
 
-        do{
-        
-          // Initialize DeltaW to zero
-          for (int j = 0; j< numberOfWeights; j++){
-            deltaW[j] = 0;
-          }
-          error = 0;
-          //For each example
-          for (int i = 0; i< example.length; i++){
-            //Compute the output
-            output = (calcOutputBool(weights, example[i]));
-	System.out.println("Ejemplo " + i+ " output " + output);
-            target = toDoubTarg(example[i][2]);
-            error += Math.pow( (target - output), 2);
-            
-            //For each unit weight, do
-            for (int j = 0; j < numberOfWeights -1; j++){
-              deltaW[j] += (target - output) * toDoub(example[i][j]); 
-            }
-            deltaW[2] +=  (target - output);
-          }
+		for (int j = 0; j < numberOfWeights; j++)
+		{
+			weights[j] = Math.random()/10;
+		}
 
-          //Then, update each weight
-          for (int i = 0; i< numberOfWeights - 1; i++){
-            weights[i] += n * deltaW[i];
-          }
-            weights[2] += n * deltaW[2];
+		do{
+       
+			// Initialize DeltaW to zero
+			for (int j = 0; j< numberOfWeights; j++){
+				deltaW[j] = 0;
+			}
+			error = 0;
 
-          // Verifying stop criterion          
+			//For each example
+			for (int i = 0; i< trainData.length; i++){
+				//Compute the output
+				output = (calcOutput(trainData[i]));
+				System.out.println("Ejemplo " + i+ " output " + output);
+				target = trainData[i][numberOfWeights-1];
+				error += Math.pow( (target - output), 2);
+          
+				//For each unit weight, do
+				for (int j = 0; j < numberOfWeights -1; j++){
+					deltaW[j] += (target - output) * trainData[i][j]; 
+				}
+				deltaW[numberOfWeights-1] +=  (target - output);
+			}
 
-          error /= example.length; 
-          errors.add(error);
-          k++;
-        } while(error != 0 && k < 100);
-        System.out.println ("Peso 1 " +weights[0]+ "  Peso 2 "+weights[1] + " Peso 3 " +weights[2]+  "\n");
-      }
+			//Then, update each weight
+			for (int i = 0; i< numberOfWeights - 1; i++){
+				weights[i] += rate * deltaW[i];
+			}
+			weights[numberOfWeights-1] += rate * deltaW[numberOfWeights-1];
+
+			// Verifying stop criterion          
+			error /= trainData.length; 
+			errors.add(error);
+			k++;
+		} while(error != 0 && k < 100);
+	}
 
 	//Delta Learning Rule
 	//Incremental Mode
@@ -370,22 +368,20 @@ public class RedNeural
 			if (args.length >= 4) 
 			{
 				option = Integer.parseInt(args[0]);
+				readTrainingData(args[2]);
 
 				if (option == 1) // Perceptron
-				{
-					readTrainingData(args[2]);
 					rn.PLR(Double.parseDouble(args[1]));
 					//rn.PLR(rn.createExamples(0, 4), 0.1);
-				}
+				
 				else if (option == 2) // Delta Rule Batch Mode
-					rn.DLRB(Double.parseDouble(args[1]));					
-					
+					rn.DLRB(Double.parseDouble(args[1]));			
+
 				else if (option == 3) // Delta Rule Incremental Mode
 					rn.DLRI(Double.parseDouble(args[1]));
 
 				else if (option == 4) // ADALINE
-				{
-					readTrainingData(args[2]);		
+				{	
 					normalizeTrainingData();		
 					rn.ADALINE(trainData, Double.parseDouble(args[1]));
 				}
