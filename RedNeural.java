@@ -17,10 +17,11 @@ public class RedNeural
 		static double[] weights;
 		static double[] deltaW;
 		static double[] normMatrix;
-         
+        static double minNorm[];
+        static double maxNorm[];
     Vector<Double> errors = new Vector<Double>();
 
-		int maxIterations = 100;
+		int maxIterations = 2000;
 		double k = 0; // Number of iterations
 		double error = 0;
 		double output = 0;
@@ -35,8 +36,8 @@ public class RedNeural
      */
      public boolean[][] createExamples(int type, int number)
      {
-        boolean[][] example = new boolean[number][3];
-        boolean bit = false;
+       boolean[][] example = new boolean[number][3];
+       boolean bit = false;
          switch(type)
          {
              case 0:
@@ -86,7 +87,7 @@ public class RedNeural
                  break;
          }
          
-        for (int i = 0; i < number; i++)
+       for (int i = 0; i < number; i++)
             for (int j = 0; j < 3; j++)
                System.out.println("example[" + i + "][" + j + "] = " + example[i][j]);
 
@@ -169,7 +170,9 @@ public class RedNeural
 					weights[j] += deltaW[j];
 				}
 				deltaW[numberOfWeights-1] = rate * (target - output);
-				weights[numberOfWeights-1] += deltaW[numberOfWeights-1];  				      
+				weights[numberOfWeights-1] += deltaW[numberOfWeights-1];
+				if ( ((double) Math.round(target) - output) == 0 )
+				System.out.println("Example " + i + " target /  output " + (double) Math.round(target) +" " +output);  				      
 			}
 
 			error /= trainData.length;			
@@ -269,6 +272,7 @@ public class RedNeural
 					deltaW[j] += n * (target - output)* example[i][j]; 
 				}
 				deltaW[numberOfWeights-1] +=   n * (target - output);
+				if ( ((double) Math.round(target) - output) == 0 )
 				System.out.println("Example " + i+ " output " + output);
 			}
 
@@ -304,13 +308,20 @@ public class RedNeural
 		{
 			for (int j=0; j < weights.length; j++)
 			{
-				aux = trainData[i][j] / normMatrix[j]; 
+				//aux = trainData[i][j] / normMatrix[j]; 
 				if (j < weights.length-1)
+                {
+                    if (maxNorm[j] == minNorm[j])
+                        aux = trainData[i][j];
+                    else                    
+                        aux = (trainData[i][j] - minNorm[j]) / (maxNorm[j] - minNorm[j]);
 					trainData[i][j] = (double) Math.round(aux);
+                }
 			//	System.out.println ("Normalizado " + i + " " + j + " " + trainData[i][j]);
 			}
 		}
 	}
+
 
 
 	// Saves training data in a global array
@@ -333,6 +344,15 @@ public class RedNeural
 			deltaW = new double[numberOfWeights];
 			normMatrix = new double[numberOfWeights];
 
+            minNorm = new double[normMatrix.length - 1];
+            maxNorm = new double[normMatrix.length - 1];
+
+            for (int k = 0; k < normMatrix.length - 1; k++)
+            {
+                minNorm[k] = Double.MAX_VALUE;
+                maxNorm[k] = Double.MIN_VALUE;
+            }
+            
 			// Reads examples
 			i = 0;
 			while ( (str = br_train.readLine()) != null )
@@ -344,6 +364,15 @@ public class RedNeural
 
 					if (j < strArr.length-1) // Last value is normalized
 						normMatrix[j] += Double.parseDouble(strArr[j]);
+                        
+                    if (j < strArr.length - 1)
+                    {
+                        if (minNorm[j] > Double.parseDouble(strArr[j]))
+                            minNorm[j] = Double.parseDouble(strArr[j]);
+                        
+                        if (maxNorm[j] < Double.parseDouble(strArr[j]))
+                            maxNorm[j] = Double.parseDouble(strArr[j]);
+                    }
 				}
 
 				i++;
@@ -377,10 +406,10 @@ public class RedNeural
 				option = Integer.parseInt(args[0]);
 				readTrainingData(args[2]);
 
-				if (option == 1) // Perceptron
+				if (option == 1){ // Perceptron
+					normalizeTrainingData();
 					rn.PLR(Double.parseDouble(args[1]));
-					//rn.PLR(rn.createExamples(0, 4), 0.1);
-				
+				}
 				else if (option == 2) // Delta Rule Batch Mode
 					rn.DLRB(Double.parseDouble(args[1]));			
 
