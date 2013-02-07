@@ -1,18 +1,15 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Proyect 1 - Part I
+ * @author Grace Gimon
+ * @author Christian Chomiak
+ * @author Oriana Baldizan
  */
-//package redneural;
 
 import java.util.Vector;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-/**
- *
- * @author Gimbet
- */
 public class RedNeural 
 {
 		static double[][] trainData;
@@ -20,15 +17,14 @@ public class RedNeural
 		static double[] weights;
 		static double[] deltaW;
 		static double[] normMatrix;
+         
+    Vector<Double> errors = new Vector<Double>();
 
-    double bias = 0.1;          
-    int numIterations = 30;
-    Vector<Double> errors = new Vector<Double>();// new double[numIterations]; 
-
-	double k = 0; // Number of iterations
-	double error = 0;
-	double output = 0;
-	double target = 0;
+		int maxIterations = 100;
+		double k = 0; // Number of iterations
+		double error = 0;
+		double output = 0;
+		double target = 0;
      
     /* Create training examples
      * type: 0: AND, 1 : OR, 2: XOR
@@ -97,13 +93,13 @@ public class RedNeural
          return example;
      }
      
-     public double toDoub(boolean b)
-     {
-         if (b) 
-            return 1;
-         else 
-            return  0;         
-     }
+	public double toDoub(boolean b)
+	{
+		if (b) 
+			return 1;
+		else 
+			return  0;         
+	}
 
 	public double toDoubTarg(boolean b)
 	{
@@ -125,6 +121,8 @@ public class RedNeural
 			return -1; 
 	}
 
+
+	// Calculates the output of the neuron
 	public double calcOutput(double[] example)
 	{
 		double output = 0;
@@ -142,13 +140,12 @@ public class RedNeural
 	}
 
 
-	// Perceptron
+	// Perceptron Neuron
 	void PLR(double rate)
 	{
-		int numberOfWeights = weights.length;
-		double k = 0; // Number of iterations
-		double error;          
+		int numberOfWeights = weights.length;         
 
+		// Random initialization of weights
 		for (int j = 0; j < numberOfWeights; j++)
 		{
 			weights[j] = Math.random()/10;
@@ -157,12 +154,14 @@ public class RedNeural
 		do
 		{
  			error = 0;
+
+			// For each example
  			for (int i = 0; i < trainData.length; i++)
  			{		
- 				double output = calcOutput(trainData[i]);
- 				double target = trainData[i][numberOfWeights-1];
+ 				output = calcOutput(trainData[i]);
+ 				target = trainData[i][numberOfWeights-1];
+
 				error += Math.pow( (target - output), 2);
-				System.out.println("Ejemplo" + i + " output " + output);
 
 				for (int j = 0; j < numberOfWeights-1; j++) 
 				{
@@ -177,7 +176,9 @@ public class RedNeural
 			errors.add(error);
 			k++;
 		}
-		while (error != 0 && k < 100);
+		while (error != 0 && k < maxIterations);
+
+		System.out.println("Number of iterations: " +k);
 	}
 
 
@@ -186,8 +187,8 @@ public class RedNeural
 	void DLRB(double rate)
 	{       
 		int numberOfWeights = weights.length;
-		double error;
 
+		// Random initialization of weights
 		for (int j = 0; j < numberOfWeights; j++)
 		{
 			weights[j] = Math.random()/10;
@@ -203,9 +204,7 @@ public class RedNeural
 
 			//For each example
 			for (int i = 0; i< trainData.length; i++){
-				//Compute the output
-				output = (calcOutput(trainData[i]));
-				System.out.println("Ejemplo " + i+ " output " + output);
+				output = (calcOutput(trainData[i])); //Compute the output
 				target = trainData[i][numberOfWeights-1];
 				error += Math.pow( (target - output), 2);
           
@@ -226,8 +225,12 @@ public class RedNeural
 			error /= trainData.length; 
 			errors.add(error);
 			k++;
-		} while(error != 0 && k < 100);
+		} while(error != 0 && k < maxIterations);
+
+		System.out.println("Number of iterations: " +k);
 	}
+
+
 
 	//Delta Learning Rule
 	//Incremental Mode
@@ -235,15 +238,17 @@ public class RedNeural
 		PLR(n);
 	}
 
+
+
 	// ADALINE
 	void ADALINE(double[][] example, double n)
 	{
 		int numberOfWeights = weights.length;
 
+		// Random initialization of weights
 		for (int j = 0; j < numberOfWeights; j++)
 		{
-			weights[j] = 0;
-			deltaW[j] = 0;
+			weights[j] = Math.random()/10;
 		}
 
 		do{
@@ -253,19 +258,20 @@ public class RedNeural
 				deltaW[j] = 0;
 			}
 
+			// For each example
 			for (int i= 0; i<example.length; i++)
 			{
-				double output = calcOutput(example[i]);
-				double target = example[i][numberOfWeights-1];
-				//System.out.println("Para " + i + " output " + output);
-
+				output = calcOutput(example[i]);
+				target = example[i][numberOfWeights-1];
 				error += Math.pow((target - output),2);
+
 				for (int j = 0; j<numberOfWeights-1; j++){
 					deltaW[j] += n * (target - output)* example[i][j]; 
 				}
 				deltaW[numberOfWeights-1] +=   n * (target - output);
 			}
 
+			//Then, update each weight
 			for (int j = 0; j<numberOfWeights-1; j++) {
 				weights[j] += deltaW[j]; 
         weights[numberOfWeights-1] += deltaW[numberOfWeights-1];
@@ -274,14 +280,15 @@ public class RedNeural
 			k++;
 			error /= example.length;
 			errors.add(error);
-			System.out.println("Iteration " + k + " Error " + error);
 
-		}while(error > 1.01 ); //&& k < 1000);
+		}while(error > 1.01 && k < maxIterations);
 		
+		System.out.println("Number of iterations: " +k);
 	}
 
 	//Truncate
-	private static double truncate(double x){
+	private static double truncate(double x)
+	{
   	if ( x > 0 )
   	  return Math.floor(x * 100)/100;
   	else
@@ -393,7 +400,7 @@ public class RedNeural
 
 
 			// Prints the chart for the Error
-			System.out.println("Printing chart");
+			System.out.println("Printing Chart of the Error");
      	XYChart xychart = new XYChart();
       
      	double[] elCosoEste = new double[rn.errors.size()];
