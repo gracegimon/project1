@@ -5,6 +5,9 @@
 //package redneural;
 
 import java.util.Vector;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 /**
  *
@@ -12,6 +15,12 @@ import java.util.Vector;
  */
 public class RedNeural 
 {
+		static double[][] trainData;
+		static double[][] testData;
+		static double[] weights;
+		static double[] deltaW;
+		static double[] normMatrix;
+
     double bias = 0.1;          
     int numIterations = 30;
     Vector<Double> errors = new Vector<Double>();// new double[numIterations]; 
@@ -114,6 +123,21 @@ public class RedNeural
          else 
              return -1; 
      }
+
+	public double calcOutputAdaline(double[] weight, double[] example)
+	{
+		double output = 0;
+
+		for(int i =0; i < weight.length-1; i++)
+		{
+			output += weight[i] * example[i]; 
+		} 
+		output += weight[weight.length-1]; //W0
+		if (output > 0)
+			return 1;
+		else 
+			return -1; 
+	}
 
 
 			// Perceptron
@@ -223,70 +247,174 @@ public class RedNeural
         PLR(example,n);
       }
 
-      // ADALINE
-      void ADALINE(boolean[][] example, double n){
-        int numberOfWeights = example[0].length;
-		double[] weights = new double[numberOfWeights];
-		double[] deltaW = new double[numberOfWeights];
+	// ADALINE
+	void ADALINE(double[][] example, double n)
+	{
+		int numberOfWeights = weights.length;
+
 		for (int j = 0; j < numberOfWeights; j++)
-        {
-          weights[j] = 0;
-          deltaW[j] = 0;
-        }
-        do{
-          error = 0;
-          for (int j = 0; j < numberOfWeights; j++)
-          {
-         
-            deltaW[j] = 0;
-          }
-          for (int i= 0; i<example.length; i++){
-            double output = calcOutput(weights,example[i]);
-            double target = toDoubTarg(example[i][2]);
-            error += Math.pow((target - output),2);
-            for (int j = 0; j<numberOfWeights-1; j++){
-              deltaW[j] += n * (target - output)* toDoub(example[i][j]); 
-            }
-            deltaW[2] +=   n * (target - output);
-          }
-          for (int j = 0; j<numberOfWeights-1; j++){
-              weights[j] += deltaW[j]; 
-          } 
-          weights[2] += deltaW[2];
-          k++;
-          error /= example.length;
-          errors.add(error);
+		{
+			weights[j] = 0;
+			deltaW[j] = 0;
+		}
 
-        }while(error != 0 && k < 10);
-        System.out.println ("Peso 1 " +weights[0]+ "  Peso 2 "+weights[1] + " Peso 3 " +weights[2]+  "\n");
-      }
+		do{
+			error = 0;
+			for (int j = 0; j < numberOfWeights; j++)
+			{       
+				deltaW[j] = 0;
+			}
 
-//Truncate
-private static double truncate(double x){
-  if ( x > 0 )
-    return Math.floor(x * 100)/100;
-  else
-    return Math.ceil(x * 100)/100;
-}
+			for (int i= 0; i<example.length; i++)
+			{
+				double output = calcOutputAdaline(weights,example[i]);
+				double target = example[i][numberOfWeights-1];
+				//System.out.println("Para " + i + " output " + output);
+
+				error += Math.pow((target - output),2);
+				for (int j = 0; j<numberOfWeights-1; j++){
+					deltaW[j] += n * (target - output)* example[i][j]; 
+				}
+				deltaW[numberOfWeights-1] +=   n * (target - output);
+			}
+
+			for (int j = 0; j<numberOfWeights-1; j++)
+				weights[j] += deltaW[j]; 
+        
+			weights[numberOfWeights-1] += deltaW[numberOfWeights-1];
+			k++;
+			error /= example.length;
+			errors.add(error);
+			System.out.println("Iteration " + k + " Error " + error);
+
+		}while(error != 0 && k < 1000);
+		
+	}
+
+	//Truncate
+	private static double truncate(double x){
+  	if ( x > 0 )
+  	  return Math.floor(x * 100)/100;
+  	else
+  	  return Math.ceil(x * 100)/100;
+	}
+
+	// Normalize training data
+	private static void normalizeTrainingData()
+	{
+		double aux;
+
+		// Calculates the average for each attribute
+		for (int i=0; i < normMatrix.length; i++)
+		{
+			normMatrix[i] = normMatrix[i] / trainData.length;
+		}
+
+		// Normalize the data 
+		for (int i=0; i < trainData.length; i++) 
+		{
+			for (int j=0; j < weights.length-1; j++)
+			{
+				aux = trainData[i][j] / normMatrix[j]; 
+				trainData[i][j] = (double) Math.round(aux);
+				//System.out.println ("Normalizado " + i + " " + j + " " + trainData[i][j]);
+			}
+		}
+	}
+
+
+	// Saves training data in a global array
+	private static void readTrainingData(String trainF) 
+	{
+		try {
+			BufferedReader br_train = new BufferedReader(new FileReader(trainF));
+			String str;
+			int numberOfExamples, numberOfWeights, i;
+
+			// Reads first line with the info
+			str = br_train.readLine();
+			String[] strArr = str.split(" ");
+			numberOfExamples = Integer.parseInt(strArr[0]);
+			numberOfWeights = Integer.parseInt(strArr[1]);
+
+			// Initializes the Examples and Weights arrays
+			trainData = new double[numberOfExamples][numberOfWeights];
+			weights = new double[numberOfWeights];
+			deltaW = new double[numberOfWeights];
+			normMatrix = new double[numberOfWeights];
+
+			// Reads examples
+			i = 0;
+			while ( (str = br_train.readLine()) != null )
+			{
+				strArr = str.split(",");
+				for (int j=0; j < strArr.length; j++)
+				{
+					trainData[i][j] = Double.parseDouble(strArr[j]);
+
+					if (j < strArr.length-1) // Last value is normalized
+						normMatrix[j] += Double.parseDouble(strArr[j]);
+				}
+
+				i++;
+			}
+	
+			br_train.close();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
    
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
-      // TODO code application logic here
-    	RedNeural rn = new RedNeural();
- 
-      rn.DLRB(rn.createExamples(0, 4), 0.1);
-         
-      System.out.println("Printing chart");
-      XYChart xychart = new XYChart();
+	public static void main(String[] args) {
+		
+		int option;
+		RedNeural rn = new RedNeural();
+
+		if (args.length > 0) {
+
+ 	    option = Integer.parseInt(args[0]);
+				
+			if (option == 1) // Perceptron
+				rn.PLR(rn.createExamples(0, 4), 0.1);
+
+			else if (option == 2) // Delta Rule Batch Mode
+				rn.DLRB(rn.createExamples(0, 4), 0.1);					
+					
+			else if (option == 3) // Delta Rule Incremental Mode
+				rn.DLRI(rn.createExamples(0, 4), 0.1);
+
+			else if (option == 4) // ADALINE
+			{
+				if (args.length >= 3 ) {
+					//BufferedReader br_test = new BufferedReader(new FileReader(args[2]));
+
+					readTrainingData(args[1]);		
+					normalizeTrainingData();		
+					rn.ADALINE(trainData, 0.1);
+				}
+				else {
+					System.out.println("Please indicate the files of the train and test examples.");
+					System.exit(-1);
+				}
+			}
+
+
+			// Prints the chart for the Error
+			System.out.println("Printing chart");
+     	XYChart xychart = new XYChart();
       
-      double[] elCosoEste = new double[rn.errors.size()];
+     	double[] elCosoEste = new double[rn.errors.size()];
       
-      for (int i = 0; i < rn.errors.size() ; i++)
-        elCosoEste[i] = rn.errors.get(i);
+     	for (int i = 0; i < rn.errors.size() ; i++)
+       	elCosoEste[i] = rn.errors.get(i);
       
-      xychart.getChart(elCosoEste);
+     	xychart.getChart(elCosoEste);
       
-    }
+		} else {
+			System.out.println("Please indicate de option to evaluate");
+		}
+	}
 }
