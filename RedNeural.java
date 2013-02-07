@@ -20,8 +20,14 @@ public class RedNeural
         static double minNorm[];
         static double maxNorm[];
     	Vector<Double> errors = new Vector<Double>();
+		Vector<Double> testErrors = new Vector<Double>();
 
-		int maxIterations = 2000;
+
+		int validTests = 0;
+    	int invalidTests = 0;
+
+
+		int maxIterations = 2000; //15;
 		double k = 0; // Number of iterations
 		double error = 0;
 		double output = 0;
@@ -265,15 +271,15 @@ public class RedNeural
 			for (int i= 0; i<example.length; i++)
 			{
 				output = calcOutput(example[i]);
-				target = example[i][numberOfWeights-1];
+				target = example[i][numberOfWeights - 1];
 				error += Math.pow((target - output),2);
 
-				for (int j = 0; j<numberOfWeights-1; j++){
+				for (int j = 0; j<numberOfWeights - 1; j++){
 					deltaW[j] += n * (target - output)* example[i][j]; 
 				}
 				deltaW[numberOfWeights-1] +=   n * (target - output);
-				if ( ((double) Math.round(target) - output) == 0 )
-				System.out.println("Example " + i+ " output " + output);
+				//if ( ((double) Math.round(target) - output) == 0 )
+				//System.out.println("Example " + i+ " output " + output);
 			}
 
 			//Then, update each weight
@@ -291,24 +297,42 @@ public class RedNeural
 		System.out.println("Number of iterations: " +k);
 	}
 
+	void ADALINE_Test(double[][] example)
+	{
+		int numberOfWeights = weights.length;
+
+		error = 0;
+
+		// For each example
+		for (int i = 0; i < example.length; i++)
+		{
+			output = calcOutput(example[i]);
+			target = example[i][numberOfWeights - 1];
+			error += Math.pow((target - output), 2);
+
+			if (target == output)
+				validTests++;
+			else
+				invalidTests++;
+		}
+
+		k++;
+		error /= example.length;
+		testErrors.add(error);
+		
+		System.out.println("Number of iterations: " + k);
+	}
 
 	// Normalize training data
 	private static void normalizeTrainingData()
 	{
 		double aux;
 
-		// Calculates the average for each attribute
-		for (int i=0; i < normMatrix.length; i++)
-		{
-			normMatrix[i] = normMatrix[i] / trainData.length;
-		}
-
 		// Normalize the data 
 		for (int i=0; i < trainData.length; i++) 
 		{
 			for (int j=0; j < weights.length; j++)
 			{
-				//aux = trainData[i][j] / normMatrix[j]; 
 				if (j < weights.length-1)
                 {
                     if (maxNorm[j] == minNorm[j])
@@ -322,7 +346,66 @@ public class RedNeural
 		}
 	}
 
+	// Normalize tes tdata
+	private static void normalizeTestData()
+	{
+		double aux;
 
+		// Normalize the data 
+		for (int i=0; i < testData.length; i++) 
+		{
+			for (int j=0; j < weights.length; j++)
+			{ 
+				if (j < weights.length-1)
+                {
+                    if (maxNorm[j] == minNorm[j])
+                        aux = testData[i][j];
+                    else                    
+                        aux = (testData[i][j] - minNorm[j]) / (maxNorm[j] - minNorm[j]);
+					testData[i][j] = (double) Math.round(aux);
+                }
+			//	System.out.println ("Normalizado " + i + " " + j + " " + trainData[i][j]);
+			}
+		}
+	}
+
+	// Saves training data in a global array
+	private static void readTestData(String trainF) 
+	{
+		try {
+			BufferedReader br_train = new BufferedReader(new FileReader(trainF));
+			String str;
+			int numberOfExamples, numberOfWeights, i;
+
+			// Reads first line with the info
+			str = br_train.readLine();
+			String[] strArr = str.split(" ");
+			numberOfExamples = Integer.parseInt(strArr[0]);
+			numberOfWeights = Integer.parseInt(strArr[1]);
+
+			// Initializes the Examples and Weights arrays
+			testData = new double[numberOfExamples][numberOfWeights];
+         
+			i = 0;
+
+			// Reads examples
+			while ( (str = br_train.readLine()) != null )
+			{
+				strArr = str.split(",");
+				for (int j=0; j < strArr.length; j++)
+				{
+					testData[i][j] = Double.parseDouble(strArr[j]);                      
+				}
+
+				i++;
+			}
+
+	
+			br_train.close();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	// Saves training data in a global array
 	private static void readTrainingData(String trainF) 
@@ -345,38 +428,36 @@ public class RedNeural
 			normMatrix = new double[numberOfWeights];
 
             minNorm = new double[normMatrix.length - 1];
-            maxNorm = new double[normMatrix.length - 1];
-
-            for (int k = 0; k < normMatrix.length - 1; k++)
-            {
-                minNorm[k] = Double.MAX_VALUE;
-                maxNorm[k] = Double.MIN_VALUE;
-            }
-            
-			// Reads examples
+            maxNorm = new double[normMatrix.length - 1];            
+			
 			i = 0;
+
+			//Read Min and Max Values
+			for (int p = 0; p < minNorm.length; p++)
+			{
+				str = br_train.readLine();
+				if (str == null)
+					System.exit(1);
+
+				strArr = str.split(" ");
+				minNorm[p] = Double.parseDouble(strArr[0]);
+				maxNorm[p] = Double.parseDouble(strArr[1]);
+				System.out.println("Min[" + p + "] = " + minNorm[p] + " --- Max[" + p + "] = " + maxNorm[p]);
+			
+			}
+
+			// Reads examples
 			while ( (str = br_train.readLine()) != null )
 			{
 				strArr = str.split(",");
 				for (int j=0; j < strArr.length; j++)
 				{
-					trainData[i][j] = Double.parseDouble(strArr[j]);
-
-					if (j < strArr.length-1) // Last value is normalized
-						normMatrix[j] += Double.parseDouble(strArr[j]);
-                        
-                    if (j < strArr.length - 1)
-                    {
-                        if (minNorm[j] > Double.parseDouble(strArr[j]))
-                            minNorm[j] = Double.parseDouble(strArr[j]);
-                        
-                        if (maxNorm[j] < Double.parseDouble(strArr[j]))
-                            maxNorm[j] = Double.parseDouble(strArr[j]);
-                    }
+					trainData[i][j] = Double.parseDouble(strArr[j]);                      
 				}
 
 				i++;
 			}
+
 	
 			br_train.close();
 		} catch(IOException e) {
@@ -396,12 +477,22 @@ public class RedNeural
      */
 	public static void main(String[] args) {
 		
-		int option;
+		int option = 0;
 		RedNeural rn = new RedNeural();
 
 		Vector<Double> rates = new Vector<Double>();
-		rates.add(0.01);
-		rates.add(0.1);
+		 rates.add(0.05);
+		 rates.add(0.1);
+		 rates.add(0.2);
+		 rates.add(0.3);
+		 rates.add(0.4);
+		 rates.add(0.5);
+		 rates.add(0.99);
+		 rates.add(0.01);
+		 
+		String[] ratesNames = new String[rates.size()];
+		for (int i = 0; i < rates.size(); i++)
+			ratesNames[i] = "" + rates.get(i);
 
 		double[][] errorCharts;
       
@@ -415,13 +506,20 @@ public class RedNeural
 			{
 				option = Integer.parseInt(args[0]);
 				readTrainingData(args[2]);
+				readTestData(args[3]);
+
+
+				if (option == 4)
+				{
+					normalizeTrainingData();
+					normalizeTestData();		
+				}
 
 				for (int i = 0 ; i < rates.size(); i++)
 				{
 					rn.k = 0;
 
 					if (option == 1){ // Perceptron
-						normalizeTrainingData();
 						rn.PLR(rates.get(i));
 					}
 					else if (option == 2) // Delta Rule Batch Mode
@@ -432,8 +530,12 @@ public class RedNeural
 
 					else if (option == 4) // ADALINE
 					{	
-						//normalizeTrainingData();		
 						rn.ADALINE(trainData, rates.get(i));
+						if (i == rates.size() - 1)
+						{
+							rn.ADALINE_Test(testData);
+							System.out.println("Valids: " + rn.validTests + " - Invalids: " + rn.invalidTests);
+						}
 					}
 
 			     	for (int j = 0; j < rn.errors.size() ; j++)
@@ -452,22 +554,12 @@ public class RedNeural
 			}
 
 
-
-			for (int i = 0; i < errorCharts.length ; i++)
-			{
-				System.out.println("\n=======\n");
-				for (int j = 0; j < rn.maxIterations ; j++)
-				{
-					System.out.println("Chart[" + i + "][" + j+ "] = " + errorCharts[i][j]);
-				}
-			}
-
 			// Prints the chart for the Error
 			System.out.println("Printing Chart of the Error");
      	XYChart xychart = new XYChart();
 
       
-     	xychart.getChart(errorCharts);
+     	xychart.getChart(errorCharts, ratesNames, option);
       
 		} else {
 			System.out.println("Please indicate the algorithm to evaluate");
