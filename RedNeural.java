@@ -269,31 +269,24 @@ public class RedNeural
 					deltaW[j] += n * (target - output)* example[i][j]; 
 				}
 				deltaW[numberOfWeights-1] +=   n * (target - output);
+				System.out.println("Example " + i+ " output " + output);
 			}
 
 			//Then, update each weight
 			for (int j = 0; j<numberOfWeights-1; j++) {
 				weights[j] += deltaW[j]; 
-        weights[numberOfWeights-1] += deltaW[numberOfWeights-1];
+        		weights[numberOfWeights-1] += deltaW[numberOfWeights-1];
 			}
 
 			k++;
 			error /= example.length;
 			errors.add(error);
 
-		}while(error > 1.01 && k < maxIterations);
+		}while(error != 0 && k < maxIterations);
 		
 		System.out.println("Number of iterations: " +k);
 	}
 
-	//Truncate
-	private static double truncate(double x)
-	{
-  	if ( x > 0 )
-  	  return Math.floor(x * 100)/100;
-  	else
-  	  return Math.ceil(x * 100)/100;
-	}
 
 	// Normalize training data
 	private static void normalizeTrainingData()
@@ -363,7 +356,14 @@ public class RedNeural
 	}
    
     /**
-     * @param args the command line arguments
+     * @param args[0] : Number of the algorithm to use
+     *					1: Perceptron
+     *					2: Delta Learning Rule Batch
+     *					3: Delta Learning Rule Increm
+     *					4: Adaline
+     * @param args[1] : Learning rate
+     * @param args[2] : Training data file
+     * @param args[3] : Testing data file
      */
 	public static void main(String[] args) {
 		
@@ -389,7 +389,7 @@ public class RedNeural
 
 				else if (option == 4) // ADALINE
 				{	
-					normalizeTrainingData();		
+					//normalizeTrainingData();		
 					rn.ADALINE(trainData, Double.parseDouble(args[1]));
 				}
 			} 
